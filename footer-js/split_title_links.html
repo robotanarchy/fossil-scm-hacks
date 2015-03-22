@@ -1,0 +1,34 @@
+<script>
+/*
+	Split up titles that contain slashes and add individual links, eg:
+		My Test Section/Some Subsection/My Page
+	will be split into three links.
+	
+	Note: You'll need to adjust the header, that it only contains
+	the title:
+		<div class="title">$<title></div>
+*/
+if(window.location.pathname == "/wiki")
+{
+	var title=document.getElementsByClassName("title")[0];
+	var splitted = title.innerHTML.split("/");
+	var newtitle = document.createElement("div");
+	
+	for(var i=0;i<splitted.length;i++)
+	{
+		if(i>0) newtitle.appendChild(document.createTextNode(" / "));
+		var a = document.createElement("a");
+		a.href="/wiki?name=";
+		for(var j=0;j<=i;j++)
+		{
+			if(j>0) a.href+="/";
+			a.href+=encodeURIComponent(splitted[j]).replace(/\%20/g,"+");
+		}
+		a.appendChild(document.createTextNode(splitted[i]));
+		a.style.color="white";
+		newtitle.appendChild(a);
+	}
+	title.innerHTML="";
+	title.appendChild(newtitle);
+}
+</script>
