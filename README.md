@@ -1,2 +1,2 @@
 # fossil-scm-hacks
-Some hacks that enhance Fossil SCM
+Some hacks that enhance [Fossil SCM](http://fossil-scm.org)
