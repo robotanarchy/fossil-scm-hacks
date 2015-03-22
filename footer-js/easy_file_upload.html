@@ -39,12 +39,15 @@ if(window.location.pathname == "/wikiedit")
 				id = id.substr(id.indexOf(s2)+s2.length);
 				id = id.substr(0, id.indexOf(s3));
 				
+				if(id.indexOf(" ") > -1)
+					return alert("Sorry, you'll need to create the page first, before you can add files.");
+				
 				// insert it into the editor
 				var url = "/raw/"+file.name+"?name="+id;
 				var html = file.type.indexOf("image") > -1 ?
 					'\n<img src="'+url+'" alt="'+file.name+'" style="max-width:200px;max-height:200px">\n' :
 					'\n['+url+'|'+file.name+']\n';
-				if(isWysiwyg()) oDoc.innerHTML+=html;
+				if('oDoc' in window) oDoc.innerHTML+=html;
 				else document.getElementsByName("w")[0].innerHTML+=html;
 			}
 			xhr.send();
