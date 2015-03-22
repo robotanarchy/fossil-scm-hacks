@@ -1,0 +1,68 @@
+<script>
+/*
+	Add 'Attach image or file' link on the top right of the editor.
+	When clicked, you can upload a file and it will be inserted into
+	the editor (as image or as link).
+*/
+if(window.location.pathname == "/wikiedit")
+{
+	// invisible 'file upload' input
+	var input = document.createElement("input");
+	input.type="file";
+	input.style.display="none";
+	input.onchange = function()
+	{
+		// emulate the form and submit it
+		var page  = document.getElementsByName("name")[0].value;
+		var file  = input.files[0];
+		var xhr   = new XMLHttpRequest();
+		var fdata = new FormData();
+		fdata.append("f", file, file.name);
+		fdata.append("page", page);
+		fdata.append("ok", "Add Attachment");
+		xhr.open("POST", "/attachadd", true);
+		xhr.onreadystatechange = function()
+		{
+			if(xhr.readyState != 4) return;
+			
+			// grab the link of the first attachment
+			xhr.open("GET", "/wiki?name="+page);
+			xhr.onreadystatechange = function()
+			{
+				if(xhr.readyState != 4) return;		
+				var id = xhr.responseText;
+				var s1 = "<hr /><h2>Attachments:</h2><ul>";
+				var s2 = '/artifact/';
+				var s3 = '"';
+				id = id.substr(id.indexOf(s1));
+				id = id.substr(id.indexOf(s2)+s2.length);
+				id = id.substr(0, id.indexOf(s3));
+				
+				// insert it into the editor
+				var url = "/raw/"+file.name+"?name="+id;
+				var html = file.type.indexOf("image") > -1 ?
+					'\n<img src="'+url+'" alt="'+file.name+'" style="max-width:200px;max-height:200px">\n' :
+					'\n['+url+'|'+file.name+']\n';
+				if(isWysiwyg()) oDoc.innerHTML+=html;
+				else document.getElementsByName("w")[0].innerHTML+=html;
+			}
+			xhr.send();
+		}
+		xhr.send(fdata);
+	};
+	document.body.appendChild(input);
+	
+	// add upload link
+	var a = document.createElement("a");
+	a.innerHTML="Attach image or file";
+	a.href="#";
+	a.style.float = "right";
+	a.onclick = function(e)
+	{
+		e.preventDefault();
+		input.click();
+	};
+	var editor = document.getElementsByTagName("form")[0];
+	editor.parentElement.insertBefore(a, editor);
+}
+</script>
