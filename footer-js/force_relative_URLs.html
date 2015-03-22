@@ -1,0 +1,22 @@
+<script>
+/*
+	Make "localhost" URLs relative in links and images
+*/
+{
+	var absolute = ["http://localhost:8081"];
+	var fix = function(a)
+	{
+		for(var i=0;i<absolute.length;i++)
+			if(a.indexOf(absolute[i]) === 0)
+				return a.substr(absolute[i].length);
+	}
+	
+	var img = document.getElementsByTagName("img");
+	for(var i=0;i<img.length;i++)
+		img[i].src = fix(img[i].src);
+	
+	var a = document.getElementsByTagName("a");
+	for(var i=0;i<a.length;i++)
+		a[i].href = fix(a[i].href);
+};
+</script>
