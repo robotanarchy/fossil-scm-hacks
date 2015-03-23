@@ -1,26 +1,26 @@
 <script>
 /*
-  PROOF OF CONECPT, INTENDED FOR UP TO 2 USERS ONLY!
-  
-  With this conversation script, you can write Wiki
-  articles on a dedicated [Mail]-page, for example:
-      *  [Mail/My Cool Conversation|My Cool Conversation]
-  (The 'Mail/'-Prefix is important!) All users of the
-  wiki will then see a (1) infront of their login name,
-  reminding them that they have an unread message. When
-  they click it, they go to the [Mail] wiki page and
-  unread conversations are marked red (adjust the source
-  if you need something different).
-  
-  As soon, as they open up the page, it gets marked as read
-  (on each users dedicated '__read_by_username' wiki page,
-  gets created and maintained fully automatically), and the
-  count will decrease.
-  
-  Only use this with few, trusted users, because everyone
-  can modify the '__read_by_username' pages of other users,
-  too (although they do have a history, so you can find
-  out who changed something).
+	PROOF OF CONECPT, INTENDED FOR UP TO 2 USERS ONLY!
+	
+	With this conversation script, you can write Wiki
+	articles on a dedicated [Mail]-page, for example:
+	*  [Mail/My Cool Conversation|My Cool Conversation]
+	(The 'Mail/'-Prefix is important!) All users of the
+	wiki will then see a (1) infront of their login name,
+	reminding them that they have an unread message. When
+	they click it, they go to the [Mail] wiki page and
+	unread conversations are marked red (adjust the source
+	if you need something different).
+	
+	As soon, as they open up the page, it gets marked as read
+	(on each users dedicated '__read_by_username' wiki page,
+	gets created and maintained fully automatically), and the
+	count will decrease.
+	
+	Only use this with few, trusted users, because everyone
+	can modify the '__read_by_username' pages of other users,
+	too (although they do have a history, so you can find
+	out who changed something).
 	
 	In the future, this could use the fossil JSON API.
 	Currently this isn't shipped everywhere (eg. on Arch),
@@ -33,6 +33,8 @@
 	user than the logged in one, and the artifact ID of
 	this change is not on the '__read_by_username' page,
 	then it will show up as unread.
+	
+	Source: http://git.io/fossil-2p-mail
 */
 {
 	var xhr = new XMLHttpRequest();
