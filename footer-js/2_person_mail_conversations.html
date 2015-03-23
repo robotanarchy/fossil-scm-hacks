@@ -1,0 +1,189 @@
+<script>
+/*
+  PROOF OF CONECPT, INTENDED FOR UP TO 2 USERS ONLY!
+  
+  With this conversation script, you can write Wiki
+  articles on a dedicated [Mail]-page, for example:
+      *  [Mail/My Cool Conversation|My Cool Conversation]
+  (The 'Mail/'-Prefix is important!) All users of the
+  wiki will then see a (1) infront of their login name,
+  reminding them that they have an unread message. When
+  they click it, they go to the [Mail] wiki page and
+  unread conversations are marked red (adjust the source
+  if you need something different).
+  
+  As soon, as they open up the page, it gets marked as read
+  (on each users dedicated '__read_by_username' wiki page,
+  gets created and maintained fully automatically), and the
+  count will decrease.
+  
+  Only use this with few, trusted users, because everyone
+  can modify the '__read_by_username' pages of other users,
+  too (although they do have a history, so you can find
+  out who changed something).
+	
+	In the future, this could use the fossil JSON API.
+	Currently this isn't shipped everywhere (eg. on Arch),
+	so it doesn't depend on it yet.
+	
+	Note on internal functionallity: Whenever you open a
+	page, the page also pulls the '__read_by_username'
+	page along with the last 200 wiki changes. When there
+	are wiki changes on [Mail/...] page done by a different
+	user than the logged in one, and the artifact ID of
+	this change is not on the '__read_by_username' page,
+	then it will show up as unread.
+*/
+{
+	var xhr = new XMLHttpRequest();
+	var count = 200;
+	var login = "$login";
+	var read_page  = "__read_by_"+login;
+	var read_start = "#READPAGES:START#";
+	var read_end   = "#READPAGES:END#";
+		
+	// load last wiki changes on "Mail/" pages
+	// done by different users
+	// changes format: [{info: artifact_id, page: Mail/...}, ...]
+	var get_changes = function(callback)
+	{
+		xhr.open("GET", "/timeline?n="+count+"&y=w", true);
+		xhr.onreadystatechange = function()
+		{
+			if(xhr.readyState != 4) return;
+			var html = xhr.responseText;
+			var page_s = 'Changes to wiki page <a href="';
+			var page_e = '">';
+			var user_s = '?u=';
+			var user_e = '&amp;';
+			var info_s = '<a href="/info/';
+			var info_e = '">details';
+			var changes = [];
+			
+			while(1)
+			{
+				var pos = html.indexOf(page_s);
+				if(pos == -1) break;
+				html = html.substr(pos+page_s.length);
+				
+				var page = html.substr(0, html.indexOf(page_e));
+				var info = html.substr(html.indexOf(info_s)+info_s.length);
+				info = info.substr(0, info.indexOf(info_e));
+				
+				var user = html.substr(html.indexOf(user_s)+user_s.length);
+				user = user.substr(0, user.indexOf(user_e));
+				
+				if(page.indexOf("/wiki?name=Mail/") !== 0 || user == login)
+					continue;
+				
+				changes.push({page:page, info:info});
+			}
+			callback(changes);
+		}
+		xhr.send();
+	}
+	var get_read = function(callback)
+	{
+		xhr.open("GET", "/wiki?name="+read_page, true);
+		xhr.onreadystatechange = function()
+		{
+			if(xhr.readyState != 4) return;
+			var html=xhr.responseText;
+			html = html.substr(html.indexOf(read_start) + read_start.length);
+			html = html.substr(0, html.indexOf(read_end));
+			if(html.indexOf(" ")>-1) return callback([]);
+			return callback(html.split(","));
+		}
+		xhr.send();
+	}
+	var save_read = function(artifacts_array, page)
+	{
+		var content = read_start+""+artifacts_array.join(",")+""+read_end;
+		
+		// first open the edit page to get the CSRF ID (not sure if needed)
+		xhr.open("GET", "wikiedit?name="+read_page, true);
+		xhr.onreadystatechange = function()
+		{
+			if(xhr.readyState != 4) return;
+			var csrf_start = '<input type="hidden" name="csrf" value="';
+			var csrf_end = '"';
+			var csrf = xhr.responseText;
+			csrf = csrf.substr(csrf.indexOf(csrf_start)+csrf_start.length);
+			csrf = csrf.substr(0, csrf.indexOf(csrf_end));
+			console.log("CSRF: "+csrf);
+			
+			// finally mark the page as read
+			xhr.open("POST", "wikiedit", true);
+			xhr.onreadystatechange = function()
+			{
+				if(xhr.readyState != 4) return;
+				console.log("marked as read: "+page);
+			}
+			
+			var fdata = new FormData();
+			fdata.append("mimetype", "text/x-fossil-wiki");
+			fdata.append("w", content);
+			fdata.append("csrf", csrf);
+			fdata.append("submit", "Apply These Changes");
+			fdata.append("name", read_page);
+			xhr.send(fdata);
+		}
+		xhr.send();
+	}
+	var new_message = function()
+	{
+		// TODO:
+		// ask for title with a prompt
+		// redirect to the editing page
+		// when the page gets saved, add it to the mail page if it isn't there yet
+	}
+	if(login)
+	{
+		// TODO: Add "new mail" button
+		
+		get_read(function(read){get_changes(function(changes)
+		{
+			var is_page = function(page, url)
+			{
+				url = url || document.URL;
+				return url.substr(url.length - page.length) == page;
+			}
+			
+			// remove read pages from changes
+			var unread = [];
+			var url  = document.URL;
+			for(var i=0;i<changes.length;i++)
+			{
+				if(read.indexOf(changes[i].info) != -1) continue;
+				
+				// check if this page is open
+				if(is_page(changes[i].page))
+				{
+					if(read.length > count) read.pop();
+					read.push(changes[i].info);
+					save_read(read, changes[i].page);
+					continue;
+				}
+				unread.push(changes[i].page);
+			}
+			
+			// mark unread threads
+			if(is_page("/wiki?name=Mail"))
+			{
+				var a = document.getElementsByTagName("a");
+				for(var i=0;i<a.length;i++)
+					for(var j=0;j<unread.length;j++)
+						if(is_page(unread[j], a[i].href))
+							a[i].style.color="red";
+			}
+			
+			// show unread counter on page, with link to 'Mail' page
+			if(unread.length)
+			{
+				var status = document.getElementsByClassName("status")[0];
+				status.innerHTML = "<a href='/wiki?name=Mail' style='color:red'>("+(unread.length)+")</a> " + status.innerHTML;
+			}
+		})});
+	}
+}
+</script>
